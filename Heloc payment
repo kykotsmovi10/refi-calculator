@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>HELOC Payment Calculator</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,600;1,700&family=Outfit:wght@300;400;500;600;700&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+–navy-900: #0a1628;
+–navy-800: #0f1f3a;
+–navy-700: #152a4a;
+–navy-600: #1b355c;
+–navy-500: #24436e;
+–navy-400: #2d5280;
+–navy-300: #3d6a9e;
+–navy-200: #5a8abf;
+–navy-100: #8bb0d9;
+–gold-500: #c9a84c;
+–gold-400: #d4b65e;
+–gold-300: #dfc474;
+–gold-200: #e8d49a;
+–gold-100: #f0e3be;
+–gold-600: #b8952f;
+–gold-700: #9a7c20;
+–text: #e4e8f0;
+–text-muted: #8a96ad;
+–input-bg: #0c1526;
+–input-border: #1e3050;
+–radius: 10px;
+}
+
+body {
+font-family: ‘Outfit’, sans-serif;
+background: var(–navy-900);
+color: var(–text);
+min-height: 100vh;
+line-height: 1.5;
+}
+
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+input[type=number] { -moz-appearance: textfield; }
+
+.app-container { max-width: 1100px; margin: 0 auto; padding: 28px 24px 60px; }
+
+.app-header {
+text-align: center;
+margin-bottom: 36px;
+padding-bottom: 28px;
+border-bottom: 1px solid var(–navy-600);
+position: relative;
+}
+.app-header::after {
+content: ‘’;
+position: absolute;
+bottom: -1px;
+left: 50%;
+transform: translateX(-50%);
+width: 80px;
+height: 2px;
+background: var(–gold-500);
+}
+.app-header h1 {
+font-family: ‘Cormorant Garamond’, serif;
+font-size: 2.1rem;
+font-weight: 700;
+color: var(–gold-400);
+letter-spacing: 0.5px;
+}
+.app-header p {
+color: var(–text-muted);
+font-size: 0.9rem;
+margin-top: 6px;
+font-weight: 300;
+letter-spacing: 0.3px;
+}
+
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+.card {
+background: var(–navy-800);
+border: 1px solid var(–navy-600);
+border-radius: var(–radius);
+padding: 24px;
+margin-bottom: 20px;
+}
+.card-title {
+font-family: ‘Cormorant Garamond’, serif;
+font-size: 1.15rem;
+font-weight: 700;
+margin-bottom: 20px;
+color: var(–gold-400);
+display: flex;
+align-items: center;
+gap: 10px;
+letter-spacing: 0.3px;
+}
+.card-title .icon {
+width: 30px; height: 30px; border-radius: 6px;
+display: flex; align-items: center; justify-content: center;
+font-size: 0.85rem;
+background: rgba(201, 168, 76, 0.12);
+color: var(–gold-500);
+}
+
+.form-group { margin-bottom: 16px; }
+.form-group label {
+display: block;
+font-size: 0.72rem;
+font-weight: 600;
+color: var(–text-muted);
+text-transform: uppercase;
+letter-spacing: 1px;
+margin-bottom: 6px;
+}
+.form-group input, .form-group select {
+width: 100%;
+padding: 10px 14px;
+background: var(–input-bg);
+border: 1px solid var(–input-border);
+border-radius: 6px;
+color: var(–text);
+font-size: 1rem;
+font-family: ‘Outfit’, sans-serif;
+transition: border-color 0.2s, box-shadow 0.2s;
+}
+.form-group input:focus, .form-group select:focus {
+outline: none;
+border-color: var(–gold-500);
+box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.12);
+}
+.form-group select { cursor: pointer; }
+.form-group select option { background: var(–navy-800); color: var(–text); }
+
+.input-with-unit { position: relative; }
+.input-with-unit input { padding-right: 44px; }
+.input-unit {
+position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+color: var(–gold-600); font-size: 0.85rem; font-weight: 600;
+pointer-events: none;
+}
+
+.hint {
+font-size: 0.72rem;
+color: var(–text-muted);
+margin-top: 4px;
+font-style: italic;
+}
+
+.payment-card {
+border-radius: var(–radius);
+padding: 22px 20px;
+text-align: center;
+position: relative;
+overflow: hidden;
+}
+.payment-card::before {
+content: ‘’;
+position: absolute;
+top: 0; left: 0; right: 0;
+height: 3px;
+}
+.payment-card .label {
+font-size: 0.68rem;
+font-weight: 700;
+text-transform: uppercase;
+letter-spacing: 1.5px;
+margin-bottom: 6px;
+}
+.payment-card .amount {
+font-family: ‘Cormorant Garamond’, serif;
+font-size: 2.1rem;
+font-weight: 700;
+line-height: 1.1;
+}
+.payment-card .sub {
+font-size: 0.75rem;
+margin-top: 6px;
+font-weight: 300;
+}
+
+.pc-interest {
+background: linear-gradient(160deg, var(–navy-600), var(–navy-700));
+border: 1px solid var(–navy-500);
+color: #fff;
+}
+.pc-interest::before { background: var(–gold-500); }
+.pc-interest .label { color: var(–gold-300); }
+.pc-interest .amount { color: #fff; }
+.pc-interest .sub { color: var(–navy-100); }
+
+.pc-pi {
+background: linear-gradient(160deg, var(–navy-500), var(–navy-600));
+border: 1px solid var(–navy-400);
+color: #fff;
+}
+.pc-pi::before { background: var(–gold-400); }
+.pc-pi .label { color: var(–gold-300); }
+.pc-pi .amount { color: var(–gold-200); }
+.pc-pi .sub { color: var(–navy-100); }
+
+.pc-shock {
+background: linear-gradient(160deg, #2a1f0a, #1a1505);
+border: 1px solid var(–gold-700);
+color: #fff;
+}
+.pc-shock::before { background: var(–gold-500); }
+.pc-shock .label { color: var(–gold-300); }
+.pc-shock .amount { color: var(–gold-400); }
+.pc-shock .sub { color: var(–gold-200); }
+
+.summary-table { width: 100%; border-collapse: collapse; }
+.summary-table td {
+padding: 10px 12px;
+font-size: 0.9rem;
+border-bottom: 1px solid var(–navy-700);
+}
+.summary-table tr:last-child td { border-bottom: none; }
+.val-gold { color: var(–gold-400); font-weight: 600; }
+.val-highlight { color: var(–gold-300); font-weight: 700; }
+
+.timeline-bar {
+display: flex;
+border-radius: 6px;
+overflow: hidden;
+height: 38px;
+margin: 16px 0 8px;
+border: 1px solid var(–navy-500);
+}
+.tbar-draw {
+background: linear-gradient(90deg, var(–navy-500), var(–navy-400));
+display: flex; align-items: center; justify-content: center;
+color: var(–gold-200); font-size: 0.72rem; font-weight: 600;
+letter-spacing: 0.3px;
+}
+.tbar-repay {
+background: linear-gradient(90deg, var(–gold-700), var(–gold-600));
+display: flex; align-items: center; justify-content: center;
+color: #fff; font-size: 0.72rem; font-weight: 600;
+letter-spacing: 0.3px;
+}
+.timeline-labels {
+display: flex; justify-content: space-between;
+font-size: 0.68rem; color: var(–text-muted);
+font-weight: 500;
+}
+
+.amort-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+.amort-table th {
+position: sticky; top: 0;
+background: var(–navy-800);
+text-align: right;
+font-size: 0.68rem;
+font-weight: 700;
+text-transform: uppercase;
+letter-spacing: 0.8px;
+color: var(–gold-500);
+padding: 10px 10px;
+border-bottom: 2px solid var(–navy-600);
+}
+.amort-table th:first-child { text-align: left; }
+.amort-table td {
+text-align: right;
+padding: 8px 10px;
+border-bottom: 1px solid var(–navy-700);
+color: var(–text);
+font-weight: 400;
+}
+.amort-table td:first-child { text-align: left; font-weight: 600; }
+.amort-table tr.draw-row td:first-child { color: var(–navy-200); }
+.amort-table tr.repay-row td:first-child { color: var(–gold-400); }
+.amort-table tr.phase-break td {
+border-top: 2px solid var(–gold-500);
+color: var(–gold-400);
+font-weight: 600;
+}
+.amort-scroll { max-height: 400px; overflow-y: auto; }
+.amort-scroll::-webkit-scrollbar { width: 5px; }
+.amort-scroll::-webkit-scrollbar-track { background: var(–navy-900); border-radius: 3px; }
+.amort-scroll::-webkit-scrollbar-thumb { background: var(–navy-500); border-radius: 3px; }
+
+.btn-present {
+display: inline-flex; align-items: center; gap: 8px;
+padding: 13px 32px;
+background: linear-gradient(135deg, var(–gold-600), var(–gold-500));
+color: var(–navy-900);
+border: none;
+border-radius: 8px;
+font-size: 0.95rem;
+font-weight: 700;
+font-family: ‘Outfit’, sans-serif;
+cursor: pointer;
+letter-spacing: 0.5px;
+transition: transform 0.15s, box-shadow 0.15s;
+}
+.btn-present:hover {
+transform: translateY(-1px);
+box-shadow: 0 4px 20px rgba(201, 168, 76, 0.25);
+}
+.btn-row { display: flex; justify-content: center; margin-top: 24px; gap: 12px; }
+
+.scenario-tabs {
+display: flex; gap: 3px; margin-bottom: 14px;
+background: var(–navy-900);
+border-radius: 6px;
+padding: 3px;
+border: 1px solid var(–navy-700);
+}
+.scenario-tab {
+flex: 1;
+padding: 7px 10px;
+border: none;
+border-radius: 4px;
+background: transparent;
+color: var(–text-muted);
+font-family: ‘Outfit’, sans-serif;
+font-size: 0.78rem;
+font-weight: 600;
+cursor: pointer;
+transition: all 0.2s;
+letter-spacing: 0.3px;
+}
+.scenario-tab.active {
+background: var(–gold-500);
+color: var(–navy-900);
+}
+
+.modal-overlay {
+position: fixed; inset: 0;
+background: rgba(5, 10, 20, 0.85);
+display: flex; align-items: center; justify-content: center;
+z-index: 1000;
+padding: 20px;
+backdrop-filter: blur(4px);
+}
+.modal-content {
+background: var(–navy-900);
+border: 1px solid var(–navy-600);
+border-radius: 14px;
+width: 100%;
+max-width: 800px;
+max-height: 90vh;
+overflow-y: auto;
+box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+}
+.modal-header {
+background: linear-gradient(135deg, var(–navy-700), var(–navy-800));
+padding: 28px 32px;
+border-radius: 14px 14px 0 0;
+border-bottom: 2px solid var(–gold-600);
+}
+.modal-header h2 {
+font-family: ‘Cormorant Garamond’, serif;
+font-style: italic;
+font-size: 1.6rem;
+color: var(–gold-400);
+font-weight: 700;
+}
+.modal-header p { color: var(–text-muted); font-size: 0.85rem; margin-top: 4px; font-weight: 300; }
+
+.modal-body { padding: 28px 32px; }
+
+.modal-cards { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 28px; }
+.modal-card {
+border-radius: var(–radius);
+padding: 20px 16px;
+text-align: center;
+color: #fff;
+}
+.mc-navy {
+background: linear-gradient(160deg, var(–navy-600), var(–navy-700));
+border: 1px solid var(–navy-500);
+}
+.mc-navy-mid {
+background: linear-gradient(160deg, var(–navy-500), var(–navy-600));
+border: 1px solid var(–navy-400);
+}
+.mc-gold-bg {
+background: linear-gradient(160deg, var(–gold-700), #6b5518);
+border: 1px solid var(–gold-600);
+}
+.modal-card .mc-label {
+font-size: 0.65rem;
+font-weight: 700;
+text-transform: uppercase;
+letter-spacing: 1.5px;
+color: var(–gold-300);
+margin-bottom: 6px;
+}
+.modal-card .mc-value {
+font-family: ‘Cormorant Garamond’, serif;
+font-size: 1.75rem;
+font-weight: 700;
+color: #fff;
+}
+.modal-card .mc-sub { font-size: 0.72rem; color: var(–navy-100); margin-top: 4px; }
+.mc-gold-bg .mc-value { color: var(–gold-200); }
+.mc-gold-bg .mc-sub { color: var(–gold-100); }
+
+.modal-detail-row {
+display: flex; justify-content: space-between; align-items: center;
+padding: 11px 0;
+border-bottom: 1px solid var(–navy-700);
+font-size: 0.88rem;
+}
+.modal-detail-row:last-child { border-bottom: none; }
+.modal-detail-row .mdr-label { color: var(–text-muted); font-weight: 400; }
+.modal-detail-row .mdr-value { font-weight: 600; color: var(–text); }
+
+.modal-actions {
+display: flex; justify-content: flex-end; gap: 10px;
+padding: 16px 32px;
+border-top: 1px solid var(–navy-700);
+}
+.btn-close-modal {
+padding: 10px 22px;
+background: transparent;
+border: 1px solid var(–navy-600);
+border-radius: 6px;
+color: var(–text-muted);
+cursor: pointer;
+font-family: ‘Outfit’, sans-serif;
+font-size: 0.85rem;
+font-weight: 500;
+}
+.btn-pdf {
+padding: 10px 22px;
+background: var(–navy-500);
+border: 1px solid var(–navy-400);
+border-radius: 6px;
+color: #fff;
+cursor: pointer;
+font-family: ‘Outfit’, sans-serif;
+font-weight: 600;
+font-size: 0.85rem;
+}
+.btn-email {
+padding: 10px 22px;
+background: linear-gradient(135deg, var(–gold-600), var(–gold-500));
+border: none;
+border-radius: 6px;
+color: var(–navy-900);
+cursor: pointer;
+font-family: ‘Outfit’, sans-serif;
+font-weight: 700;
+font-size: 0.85rem;
+}
+
+@media (max-width: 768px) {
+.grid-2, .grid-3, .modal-cards { grid-template-columns: 1fr; }
+.app-header h1 { font-size: 1.5rem; }
+.payment-card .amount { font-size: 1.6rem; }
+}
+
+@media print {
+body { background: #fff; color: #111; }
+.card { border: 1px solid #ddd; background: #fff; }
+.btn-present, .btn-row, .modal-overlay { display: none !important; }
+.payment-card { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+</style>
+
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useMemo } = React;
+
+const fmt = (n) => n.toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 });
+const pct = (n) => `${n.toFixed(3)}%`;
+
+function App() {
+  const [helocAmount, setHelocAmount] = useState(80000);
+  const [drawRate, setDrawRate] = useState(8.5);
+  const [drawYears, setDrawYears] = useState(10);
+  const [repayYears, setRepayYears] = useState(20);
+  const [repayRate, setRepayRate] = useState(9.0);
+  const [rateScenario, setRateScenario] = useState('custom');
+  const [showModal, setShowModal] = useState(false);
+  const [showSchedule, setShowSchedule] = useState(false);
+
+  const effectiveRepayRate = useMemo(() => {
+    if (rateScenario === 'same') return drawRate;
+    if (rateScenario === 'plus1') return drawRate + 1;
+    if (rateScenario === 'plus2') return drawRate + 2;
+    return repayRate;
+  }, [rateScenario, drawRate, repayRate]);
+
+  const results = useMemo(() => {
+    const bal = parseFloat(helocAmount) || 0;
+    const dr = (parseFloat(drawRate) || 0) / 100;
+    const rr = (parseFloat(effectiveRepayRate) || 0) / 100;
+    const dy = parseInt(drawYears) || 10;
+    const ry = parseInt(repayYears) || 20;
+
+    const ioPayment = bal * (dr / 12);
+    const monthlyRepayRate = rr / 12;
+    const repayMonths = ry * 12;
+    let piPayment = 0;
+    if (monthlyRepayRate > 0 && repayMonths > 0) {
+      piPayment = bal * (monthlyRepayRate * Math.pow(1 + monthlyRepayRate, repayMonths)) /
+                  (Math.pow(1 + monthlyRepayRate, repayMonths) - 1);
+    } else if (repayMonths > 0) {
+      piPayment = bal / repayMonths;
+    }
+
+    const paymentShock = piPayment - ioPayment;
+    const paymentShockPct = ioPayment > 0 ? (paymentShock / ioPayment) * 100 : 0;
+    const totalDrawInterest = ioPayment * (dy * 12);
+    const totalRepayPaid = piPayment * repayMonths;
+    const totalRepayInterest = totalRepayPaid - bal;
+    const totalInterest = totalDrawInterest + totalRepayInterest;
+    const totalCost = totalDrawInterest + totalRepayPaid;
+
+    const schedule = [];
+    for (let y = 1; y <= dy; y++) {
+      schedule.push({
+        year: y, phase: 'draw', payment: ioPayment,
+        principal: 0, interest: ioPayment * 12, balance: bal
+      });
+    }
+    let repayBal = bal;
+    for (let y = 1; y <= ry; y++) {
+      let yearPrincipal = 0, yearInterest = 0;
+      for (let m = 0; m < 12; m++) {
+        if (repayBal <= 0) break;
+        const mInt = repayBal * (rr / 12);
+        const mPrin = Math.min(piPayment - mInt, repayBal);
+        yearPrincipal += mPrin;
+        yearInterest += mInt;
+        repayBal -= mPrin;
+      }
+      if (repayBal < 0.01) repayBal = 0;
+      schedule.push({
+        year: dy + y, phase: 'repay', payment: piPayment,
+        principal: yearPrincipal, interest: yearInterest, balance: repayBal
+      });
+    }
+
+    return {
+      ioPayment, piPayment, paymentShock, paymentShockPct,
+      totalDrawInterest, totalRepayInterest, totalInterest, totalCost,
+      drawYears: dy, repayYears: ry, schedule, bal,
+      drawRate: parseFloat(drawRate) || 0,
+      repayRateUsed: effectiveRepayRate
+    };
+  }, [helocAmount, drawRate, effectiveRepayRate, drawYears, repayYears]);
+
+  const totalYears = results.drawYears + results.repayYears;
+  const drawPct = (results.drawYears / totalYears) * 100;
+
+  const handlePDF = () => {
+    const content = buildPrintHTML();
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.left = '-9999px';
+    document.body.appendChild(iframe);
+    iframe.contentDocument.write(content);
+    iframe.contentDocument.close();
+    setTimeout(() => {
+      iframe.contentWindow.focus();
+      iframe.contentWindow.print();
+      setTimeout(() => document.body.removeChild(iframe), 1000);
+    }, 500);
+  };
+
+  const handleEmail = () => {
+    const content = buildPrintHTML();
+    const blob = new Blob([content], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'HELOC_Payment_Analysis.html';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  function buildPrintHTML() {
+    return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>HELOC Payment Analysis</title>
+<style>
+body{font-family:Helvetica Neue,Arial,sans-serif;max-width:720px;margin:40px auto;color:#1a2a44;line-height:1.6}
+h1{text-align:center;font-size:1.5rem;color:#0f1f3a;border-bottom:2px solid #c9a84c;padding-bottom:14px;letter-spacing:0.5px}
+.cards{display:flex;gap:12px;margin:24px 0}
+.card{flex:1;padding:18px;border-radius:8px;text-align:center;color:#fff}
+.c1{background:#152a4a}.c2{background:#1b355c}.c3{background:#6b5518}
+.card .lbl{font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;opacity:.8}
+.card .val{font-size:1.5rem;font-weight:700;margin:6px 0}
+.card .sub{font-size:0.72rem;opacity:.7}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:0.85rem}
+th{text-align:left;padding:8px;border-bottom:2px solid #c9a84c;font-size:0.7rem;text-transform:uppercase;color:#6b7a94;letter-spacing:0.5px}
+td{padding:8px;border-bottom:1px solid #e8ecf2}
+.right{text-align:right}
+.gold{color:#9a7c20;font-weight:600}
+.section{margin:28px 0 10px;font-weight:700;font-size:1rem;color:#0f1f3a}
+.draw{color:#24436e}.repay{color:#9a7c20}
+.footer{text-align:center;font-size:0.7rem;color:#8a96ad;margin-top:40px;border-top:1px solid #ddd;padding-top:12px}
+</style></head><body>
+
+<h1>HELOC Payment Analysis</h1>
+<div class="cards">
+  <div class="card c1"><div class="lbl">Interest-Only Payment</div><div class="val">${fmt(results.ioPayment)}</div><div class="sub">Years 1–${results.drawYears} at ${pct(results.drawRate)}</div></div>
+  <div class="card c2"><div class="lbl">P&I Payment</div><div class="val">${fmt(results.piPayment)}</div><div class="sub">Years ${results.drawYears+1}–${totalYears} at ${pct(results.repayRateUsed)}</div></div>
+  <div class="card c3"><div class="lbl">Payment Increase</div><div class="val">+${fmt(results.paymentShock)}</div><div class="sub">${results.paymentShockPct.toFixed(0)}% increase</div></div>
+</div>
+<table><tr><th>Detail</th><th class="right">Value</th></tr>
+<tr><td>HELOC Amount</td><td class="right">${fmt(results.bal)}</td></tr>
+<tr><td>Draw Period Rate</td><td class="right">${pct(results.drawRate)}</td></tr>
+<tr><td>Repayment Period Rate</td><td class="right">${pct(results.repayRateUsed)}</td></tr>
+<tr><td>Total Interest (Draw Period)</td><td class="right gold">${fmt(results.totalDrawInterest)}</td></tr>
+<tr><td>Total Interest (Repayment Period)</td><td class="right gold">${fmt(results.totalRepayInterest)}</td></tr>
+<tr><td><strong>Total Interest Over Life of HELOC</strong></td><td class="right gold"><strong>${fmt(results.totalInterest)}</strong></td></tr>
+<tr><td><strong>Total Cost (All Payments)</strong></td><td class="right gold"><strong>${fmt(results.totalCost)}</strong></td></tr>
+</table>
+<div class="section">Yearly Schedule</div>
+<table>
+<tr><th>Year</th><th>Phase</th><th class="right">Payment</th><th class="right">Principal</th><th class="right">Interest</th><th class="right">Balance</th></tr>
+${results.schedule.map(r => `<tr><td>${r.year}</td><td class="${r.phase === 'draw' ? 'draw' : 'repay'}">${r.phase === 'draw' ? 'Interest Only' : 'P&I'}</td><td class="right">${fmt(r.payment)}</td><td class="right">${fmt(r.principal)}</td><td class="right">${fmt(r.interest)}</td><td class="right">${fmt(r.balance)}</td></tr>`).join('')}
+</table>
+<div class="footer">Generated by HELOC Payment Calculator</div>
+</body></html>`;
+  }
+
+return (
+<div className="app-container">
+<div className="app-header">
+<h1>HELOC Payment Calculator</h1>
+<p>Interest-Only Draw Period → Principal & Interest Repayment</p>
+</div>
+
+```
+  <div className="grid-2">
+    <div>
+      <div className="card">
+        <div className="card-title"><span className="icon">$</span> HELOC Details</div>
+        <div className="form-group">
+          <label>HELOC Credit Line Amount</label>
+          <div className="input-with-unit">
+            <input type="number" value={helocAmount} onChange={e => setHelocAmount(e.target.value)} />
+            <span className="input-unit">$</span>
+          </div>
+        </div>
+        <div className="grid-2">
+          <div className="form-group">
+            <label>Draw Period</label>
+            <div className="input-with-unit">
+              <input type="number" value={drawYears} onChange={e => setDrawYears(e.target.value)} min="1" max="15" />
+              <span className="input-unit">yrs</span>
+            </div>
+            <div className="hint">Interest-only payments</div>
+          </div>
+          <div className="form-group">
+            <label>Repayment Period</label>
+            <div className="input-with-unit">
+              <input type="number" value={repayYears} onChange={e => setRepayYears(e.target.value)} min="1" max="30" />
+              <span className="input-unit">yrs</span>
+            </div>
+            <div className="hint">Principal + Interest</div>
+          </div>
+        </div>
+      </div>
+
+      <div className="card">
+        <div className="card-title"><span className="icon">%</span> Interest Rates</div>
+        <div className="form-group">
+          <label>Draw Period Rate (Current)</label>
+          <div className="input-with-unit">
+            <input type="number" value={drawRate} onChange={e => setDrawRate(e.target.value)} step="0.125" />
+            <span className="input-unit">%</span>
+          </div>
+          <div className="hint">Variable rate — Prime + margin</div>
+        </div>
+        <div className="form-group">
+          <label>Repayment Period Rate</label>
+          <div className="scenario-tabs">
+            <button className={`scenario-tab ${rateScenario === 'same' ? 'active' : ''}`} onClick={() => setRateScenario('same')}>Same</button>
+            <button className={`scenario-tab ${rateScenario === 'plus1' ? 'active' : ''}`} onClick={() => setRateScenario('plus1')}>+1%</button>
+            <button className={`scenario-tab ${rateScenario === 'plus2' ? 'active' : ''}`} onClick={() => setRateScenario('plus2')}>+2%</button>
+            <button className={`scenario-tab ${rateScenario === 'custom' ? 'active' : ''}`} onClick={() => setRateScenario('custom')}>Custom</button>
+          </div>
+          {rateScenario === 'custom' && (
+            <div className="input-with-unit">
+              <input type="number" value={repayRate} onChange={e => setRepayRate(e.target.value)} step="0.125" />
+              <span className="input-unit">%</span>
+            </div>
+          )}
+          {rateScenario !== 'custom' && (
+            <div className="hint">Repayment rate: {pct(effectiveRepayRate)}</div>
+          )}
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div className="grid-3" style={{marginBottom: '20px'}}>
+        <div className="payment-card pc-interest">
+          <div className="label">Interest Only</div>
+          <div className="amount">{fmt(results.ioPayment)}</div>
+        </div>
+        <div className="payment-card pc-pi">
+          <div className="label">P & I Payment</div>
+          <div className="amount">{fmt(results.piPayment)}</div>
+        </div>
+        <div className="payment-card pc-shock">
+          <div className="label">Payment Shock</div>
+          <div className="amount">+{fmt(results.paymentShock)}</div>
+        </div>
+      </div>
+
+      <div className="card">
+        <div className="card-title"><span className="icon">◷</span> Loan Timeline</div>
+        <div className="timeline-bar">
+          <div className="tbar-draw" style={{width: `${drawPct}%`}}>
+            Interest Only ({results.drawYears} yrs)
+          </div>
+          <div className="tbar-repay" style={{width: `${100 - drawPct}%`}}>
+            P&I ({results.repayYears} yrs)
+          </div>
+        </div>
+        <div className="timeline-labels">
+          <span>Year 0</span>
+          <span>Year {results.drawYears}</span>
+          <span>Year {totalYears}</span>
+        </div>
+      </div>
+
+      <div className="card">
+        <div className="card-title"><span className="icon">Σ</span> Cost Breakdown</div>
+        <table className="summary-table">
+          <tbody>
+            <tr>
+              <td>HELOC Amount</td>
+              <td style={{textAlign:'right',fontWeight:600}}>{fmt(results.bal)}</td>
+            </tr>
+            <tr>
+              <td>Interest Paid (Draw Period)</td>
+              <td className="val-gold" style={{textAlign:'right'}}>{fmt(results.totalDrawInterest)}</td>
+            </tr>
+            <tr>
+              <td>Interest Paid (Repayment Period)</td>
+              <td className="val-gold" style={{textAlign:'right'}}>{fmt(results.totalRepayInterest)}</td>
+            </tr>
+            <tr>
+              <td><strong>Total Interest Paid</strong></td>
+              <td className="val-highlight" style={{textAlign:'right'}}><strong>{fmt(results.totalInterest)}</strong></td>
+            </tr>
+            <tr>
+              <td><strong>Total Cost of HELOC</strong></td>
+              <td className="val-highlight" style={{textAlign:'right'}}><strong>{fmt(results.totalCost)}</strong></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div className="card">
+    <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+      <div className="card-title" style={{marginBottom:0}}>Yearly Amortization Schedule</div>
+      <button
+        onClick={() => setShowSchedule(!showSchedule)}
+        style={{
+          background: 'transparent', border: '1px solid var(--navy-600)',
+          color: 'var(--gold-500)', borderRadius: 6, padding: '8px 18px',
+          cursor: 'pointer', fontFamily: 'Outfit', fontSize: '0.82rem', fontWeight: 600,
+          letterSpacing: '0.3px'
+        }}
+      >
+        {showSchedule ? 'Hide Schedule ▲' : 'Show Schedule ▼'}
+      </button>
+    </div>
+    {showSchedule && (
+      <div className="amort-scroll" style={{marginTop: 16}}>
+        <table className="amort-table">
+          <thead>
+            <tr>
+              <th>Year</th>
+              <th style={{textAlign:'right'}}>Phase</th>
+              <th style={{textAlign:'right'}}>Mo. Payment</th>
+              <th style={{textAlign:'right'}}>Annual Principal</th>
+              <th style={{textAlign:'right'}}>Annual Interest</th>
+              <th style={{textAlign:'right'}}>Balance</th>
+            </tr>
+          </thead>
+          <tbody>
+            {results.schedule.map((r, i) => {
+              const isPhaseBreak = i > 0 && r.phase !== results.schedule[i-1].phase;
+              return (
+                <tr key={r.year} className={`${r.phase === 'draw' ? 'draw-row' : 'repay-row'} ${isPhaseBreak ? 'phase-break' : ''}`}>
+                  <td>{r.year}</td>
+                  <td style={{textAlign:'right'}}>{r.phase === 'draw' ? 'Interest Only' : 'P&I'}</td>
+                  <td style={{textAlign:'right'}}>{fmt(r.payment)}</td>
+                  <td style={{textAlign:'right'}}>{fmt(r.principal)}</td>
+                  <td style={{textAlign:'right'}}>{fmt(r.interest)}</td>
+                  <td style={{textAlign:'right'}}>{fmt(r.balance)}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    )}
+  </div>
+
+  <div className="btn-row">
+    <button className="btn-present" onClick={() => setShowModal(true)}>
+      Present to Client
+    </button>
+  </div>
+
+  {showModal && (
+    <div className="modal-overlay" onClick={() => setShowModal(false)}>
+      <div className="modal-content" onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2>HELOC Payment Analysis</h2>
+          <p>Home Equity Line of Credit — {results.drawYears}-Year Draw / {results.repayYears}-Year Repayment</p>
+        </div>
+        <div className="modal-body">
+          <div className="modal-cards">
+            <div className="modal-card mc-navy">
+              <div className="mc-label">Interest-Only Payment</div>
+              <div className="mc-value">{fmt(results.ioPayment)}</div>
+              <div className="mc-sub">Years 1–{results.drawYears} at {pct(results.drawRate)}</div>
+            </div>
+            <div className="modal-card mc-navy-mid">
+              <div className="mc-label">P&I Payment</div>
+              <div className="mc-value">{fmt(results.piPayment)}</div>
+              <div className="mc-sub">Years {results.drawYears+1}–{totalYears} at {pct(results.repayRateUsed)}</div>
+            </div>
+            <div className="modal-card mc-gold-bg">
+              <div className="mc-label">Payment Increase</div>
+              <div className="mc-value">+{fmt(results.paymentShock)}</div>
+              <div className="mc-sub">{results.paymentShockPct.toFixed(0)}% monthly increase</div>
+            </div>
+          </div>
+
+          <div className="modal-detail-row">
+            <span className="mdr-label">HELOC Credit Line</span>
+            <span className="mdr-value">{fmt(results.bal)}</span>
+          </div>
+          <div className="modal-detail-row">
+            <span className="mdr-label">Draw Period</span>
+            <span className="mdr-value">{results.drawYears} years (interest only)</span>
+          </div>
+          <div className="modal-detail-row">
+            <span className="mdr-label">Repayment Period</span>
+            <span className="mdr-value">{results.repayYears} years (principal & interest)</span>
+          </div>
+          <div className="modal-detail-row">
+            <span className="mdr-label">Draw Period Rate</span>
+            <span className="mdr-value">{pct(results.drawRate)}</span>
+          </div>
+          <div className="modal-detail-row">
+            <span className="mdr-label">Repayment Period Rate</span>
+            <span className="mdr-value">{pct(results.repayRateUsed)}</span>
+          </div>
+          <div className="modal-detail-row">
+            <span className="mdr-label">Total Interest (Draw Period)</span>
+            <span className="mdr-value" style={{color:'var(--gold-400)'}}>{fmt(results.totalDrawInterest)}</span>
+          </div>
+          <div className="modal-detail-row">
+            <span className="mdr-label">Total Interest (Repayment Period)</span>
+            <span className="mdr-value" style={{color:'var(--gold-400)'}}>{fmt(results.totalRepayInterest)}</span>
+          </div>
+          <div className="modal-detail-row">
+            <span className="mdr-label"><strong>Total Interest Over Life of HELOC</strong></span>
+            <span className="mdr-value" style={{color:'var(--gold-300)'}}><strong>{fmt(results.totalInterest)}</strong></span>
+          </div>
+          <div className="modal-detail-row">
+            <span className="mdr-label"><strong>Total Cost (All Payments)</strong></span>
+            <span className="mdr-value" style={{color:'var(--gold-300)'}}><strong>{fmt(results.totalCost)}</strong></span>
+          </div>
+        </div>
+        <div className="modal-actions">
+          <button className="btn-close-modal" onClick={() => setShowModal(false)}>Close</button>
+          <button className="btn-email" onClick={handleEmail}>Download for Email</button>
+          <button className="btn-pdf" onClick={handlePDF}>Print / PDF</button>
+        </div>
+      </div>
+    </div>
+  )}
+</div>
+```
+
+);
+}
+
+ReactDOM.createRoot(document.getElementById(‘root’)).render(<App />);
+</script>
+
+</body>
+</html>
